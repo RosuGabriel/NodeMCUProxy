@@ -1,5 +1,7 @@
 # Overview
 
+<img align="right" width="180" src="UI.jpg" alt="Wrb User Interace of the proxy"/>
+
 This is a proxy server created using NodeMCU (ESP8266) to manage the state of another server.
 
 It hosts a web server that can provide the server status and make changes to it. To wake it up, support for a magic packet on the server is necessary. To shut it down, any web server to manage the shutdown request.
