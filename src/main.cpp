@@ -4,6 +4,7 @@
 #include <ESP8266Ping.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPClient.h>
+#include "secrets.h"
 
 // ----------------------------(DECLARATION)----------------------------
 
@@ -12,19 +13,19 @@ HTTPClient http;
 WiFiClient wifiClient;
 ESP8266WebServer server(80);
 
-const byte server_mac[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-IPAddress server_ip(192, 168, 0, 0);
-IPAddress broadcast_ip(192, 168, 0, 0);
-const char shutdown_url[] = "your_shutdown_url";
-const char ssid[] = "your_ssid";
-const char pass[] = "your_password";
+const byte server_mac[] = SERVER_MAC;
+IPAddress server_ip(SERVER_IP);
+IPAddress broadcast_ip(BROADCAST_IP);
+const String shutdown_url = "http://" + server_ip.toString() + SERVER_PORT + SHUTDOWN_ENDPOINT;
+const char ssid[] = WIFI_SSID;
+const char pass[] = WIFI_PASS;
 
 void sendMagicPacket(const byte mac[]);
 void connectToWiFi(const char ssid[], const char pass[]);
 bool isAwake(IPAddress ip);
 void awakeServer();
 void handleConnect();
-String sendHTML(String message);
+String sendHTML(const String &message);
 void configAndStartWebServer();
 void shutdownServer();
 void initHTTPClient();
@@ -57,19 +58,23 @@ void initHTTPClient()
 
 void shutdownServer()
 {
-  http.POST("");
   server.send(200, "text/html", sendHTML("The server is shutting down"));
+  http.POST("");
+  http.POST("");
+  http.POST("");
 }
 
 void awakeServer()
 {
-  sendMagicPacket(server_mac);
   server.send(200, "text/html", sendHTML("The server is waking up"));
+  sendMagicPacket(server_mac);
 }
 
-String sendHTML(String message)
+String sendHTML(const String &message)
 {
-  String ptr = "<!DOCTYPE html>\n";
+  String ptr;
+  ptr.reserve(1024);
+  ptr += "<!DOCTYPE html>\n";
   ptr += "<html>\n";
   ptr += "<head>\n";
   ptr += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n";
@@ -145,19 +150,15 @@ void sendMagicPacket(const byte mac[])
       index++;
     }
   }
-  udp.beginPacket(broadcast_ip, 9);
-  udp.write(packet, 102);
-  udp.endPacket();
+  for (byte i = 0; i < 3; i++)
+  {
+    udp.beginPacket(broadcast_ip, 9);
+    udp.write(packet, 102);
+    udp.endPacket();
+  }
 }
 
 bool isAwake(IPAddress ip)
 {
-  if (Ping.ping(ip, 3))
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
+  return Ping.ping(ip, 2);
 }
